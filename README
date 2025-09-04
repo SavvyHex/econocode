@@ -1,0 +1,70 @@
+# EconoCode
+
+A toy compiler that transforms arithmetic expressions into intermediate representation (IR) code.
+
+## Overview
+
+EconoCode is a simple compiler frontend that demonstrates the basic stages of compilation:
+1. **Lexical Analysis** - Tokenizes input using the Logos crate
+2. **Parsing** - Converts tokens to Abstract Syntax Tree (AST) using LALRPOP
+3. **Lowering** - Transforms AST into intermediate representation
+
+## Supported Language Features
+
+The language supports basic arithmetic expressions:
+- Integer literals (e.g., `42`, `123`)
+- Variables/identifiers (e.g., `x`, `myVar`)
+- Binary arithmetic operations: `+`, `-`, `*`, `/`
+- Parentheses for grouping expressions
+
+## Usage
+
+```bash
+# Compile the project
+cargo build
+
+# Run with input file
+./target/debug/econocode input.txt
+
+# Save output to file
+./target/debug/econocode input.txt -o output.ir
+
+# Display AST before generating IR
+./target/debug/econocode input.txt --ast
+```
+
+## Example
+
+Input file (`example.txt`):
+```
+(2 + 3) * x
+```
+
+Output IR:
+```
+t0 = const 2
+t1 = const 3
+t2 = add t0, t1
+t3 = x
+t4 = mul t2, t3
+Result in t4
+```
+
+## Architecture
+
+- **`src/lexer.rs`** - Token definitions and lexical analysis
+- **`src/parser.lalrpop`** - Grammar specification for LALRPOP parser
+- **`src/ast.rs`** - Abstract Syntax Tree node definitions
+- **`src/lower.rs`** - AST to IR transformation logic
+- **`src/ir.rs`** - Intermediate representation definitions
+- **`src/main.rs`** - Command-line interface and compilation pipeline
+
+## Dependencies
+
+- **LALRPOP** - LR(1) parser generator
+- **Logos** - Fast lexer generator
+- **Clap** - Command-line argument parsing
+
+## License
+
+See [LICENSE](LICENSE) file for details.
