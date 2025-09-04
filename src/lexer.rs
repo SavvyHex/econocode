@@ -15,4 +15,8 @@ pub enum Token {
 
     #[token("(")] LParen,
     #[token(")")] RParen,
+
+    // Skip whitespace automatically
+    #[regex(r"[ \t\n\f]+", logos::skip)]
+    Whitespace, // This variant won't actually be produced due to logos::skip
 }

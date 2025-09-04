@@ -1,7 +1,24 @@
 // Simple arithmetic grammar
 use crate::ast::Expr;
+use crate::lexer::Token;
 
 grammar;
+
+extern {
+    type Location = usize;
+    type Error = ();
+
+    enum Token {
+        "+" => Token::Plus,
+        "-" => Token::Minus,
+        "*" => Token::Star,
+        "/" => Token::Slash,
+        "(" => Token::LParen,
+        ")" => Token::RParen,
+        "int" => Token::Int(<i64>),
+        "ident" => Token::Ident(<String>),
+    }
+}
 
 pub Expr: Expr = {
     <l:Expr> "+" <r:Term> => Expr::Add(Box::new(l), Box::new(r)),
@@ -15,11 +32,9 @@ Term: Expr = {
     Factor,
 };
 
+
 Factor: Expr = {
-    <n:INT> => Expr::Int(n),
-    <id:IDENT> => Expr::Var(id),
+    <n:"int"> => Expr::Int(n),
+    <id:"ident"> => Expr::Var(id),
     "(" <e:Expr> ")" => e,
 };
-
-terminal INT: i64 = "[0-9]+" => |tok| tok.parse().unwrap();
-terminal IDENT: String = "[a-zA-Z_][a-zA-Z0-9_]*" => |tok| tok.to_string();

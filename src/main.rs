@@ -1,19 +1,12 @@
-mod lexer;
-mod ast;
-mod ir;
-mod lower;
-
-#[macro_use]
-extern crate lalrpop_util;
-
-lalrpop_mod!(pub parser);
-
-use crate::parser::ExprParser;
+use econocode::{lexer::Token, ExprParser};
 use crate::lower::Lower;
 use clap::Parser;
 use std::fs;
 use std::path::PathBuf;
 use std::io::{self, Write};
+use logos::Logos;
+
+mod lower;
 
 /// Toy language compiler (AST -> IR)
 #[derive(Parser, Debug)]
@@ -37,8 +30,16 @@ fn main() {
     let src = fs::read_to_string(&args.input)
         .expect("Failed to read input file");
 
+    // Tokenize the input
+    let lexer = Token::lexer(&src);
+    let tokens: Vec<_> = lexer.enumerate()
+        .filter_map(|(pos, token)| match token {
+            Ok(token) => Some(Ok((pos, token, pos + 1))), // (start, token, end)
+            Err(_) => None, // Skip errors
+        }).collect();
+
     let parser = ExprParser::new();
-    match parser.parse(&src) {
+    match parser.parse(tokens) {
         Ok(ast) => {
             if args.ast {
                 println!("AST: {:#?}", ast);

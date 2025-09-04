@@ -11,3 +11,11 @@ thiserror = "2.0.16"
 
 [build-dependencies]
 lalrpop = "0.22.2"
+
+[[bin]]
+name = "econocode"
+path = "src/main.rs"
+
+[lib]
+name = "econocode"
+path = "src/lib.rs"

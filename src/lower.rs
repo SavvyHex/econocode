@@ -1,5 +1,5 @@
-use crate::ast::Expr;
-use crate::ir::{Instr, BinOp};
+use econocode::ast::Expr;
+use econocode::ir::{Instr, BinOp};
 
 pub struct Lower {
     next_temp: usize,
