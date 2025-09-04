@@ -4,3 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+clap = { version = "4.5.47", features = ["derive"] }
+lalrpop-util = { version = "0.22.2", features = ["lexer"] }
+logos = "0.15.1"
+thiserror = "2.0.16"
+
+[build-dependencies]
+lalrpop = "0.22.2"
