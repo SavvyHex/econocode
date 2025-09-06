@@ -7,7 +7,8 @@ A toy compiler that transforms arithmetic expressions into intermediate represen
 EconoCode is a simple compiler frontend that demonstrates the basic stages of compilation:
 1. **Lexical Analysis** - Tokenizes input using the Logos crate
 2. **Parsing** - Converts tokens to Abstract Syntax Tree (AST) using LALRPOP
-3. **Lowering** - Transforms AST into intermediate representation
+3. **Lowering** - Transforms AST into intermediate representation with energy estimation
+4. **Execution** - Interprets the IR to run the code
 
 ## Supported Language Features
 
@@ -31,6 +32,9 @@ cargo build
 
 # Display AST before generating IR
 ./target/debug/econocode input.txt --ast
+
+# Execute the code and print result
+./target/debug/econocode input.txt --run
 ```
 
 ## Example
