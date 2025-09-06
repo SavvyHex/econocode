@@ -1,15 +1,15 @@
 
-// Energy estimation for real lowering (step2)
+// Energy estimation for real lowering (step2) - updated for 64-bit integer operations
 pub fn estimate_energy(instrs: &[Instr]) -> u32 {
     let mut total = 0;
     for instr in instrs {
         total += match instr {
             Instr::LoadConst(_, _) => 1, // Immediate load
-            Instr::Move(_, _) => 2, // Memory load (variable access)
+            Instr::Move(_, _) => 5, // Memory load (64-bit variable access, cache hit)
             Instr::BinOp(op, _, _, _) => match op {
-                BinOp::Add | BinOp::Sub => 1, 
-                BinOp::Mul => 3, 
-                BinOp::Div => 10,
+                BinOp::Add | BinOp::Sub => 1, // 64-bit ALU
+                BinOp::Mul => 5, // 64-bit multiplication
+                BinOp::Div => 40, // 64-bit division
             },
         };
     }
