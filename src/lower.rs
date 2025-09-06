@@ -1,5 +1,22 @@
-use econocode::ast::Expr;
-use econocode::ir::{Instr, BinOp};
+
+// Energy estimation for real lowering (step2)
+pub fn estimate_energy(instrs: &[Instr]) -> u32 {
+    let mut total = 0;
+    for instr in instrs {
+        total += match instr {
+            Instr::LoadConst(_, _) => 1, // Immediate load
+            Instr::Move(_, _) => 2, // Memory load (variable access)
+            Instr::BinOp(op, _, _, _) => match op {
+                BinOp::Add | BinOp::Sub => 1, 
+                BinOp::Mul => 3, 
+                BinOp::Div => 10,
+            },
+        };
+    }
+    total
+}
+use super::ast::Expr;
+use super::ir::{Instr, BinOp};
 
 pub struct Lower {
     next_temp: usize,

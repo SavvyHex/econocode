@@ -1,12 +1,12 @@
 use econocode::{lexer::Token, ExprParser};
-use crate::lower::Lower;
+use econocode::lower::{Lower, estimate_energy};
 use clap::Parser;
 use std::fs;
 use std::path::PathBuf;
 use std::io::{self, Write};
 use logos::Logos;
 
-mod lower;
+
 
 /// Toy language compiler (AST -> IR)
 #[derive(Parser, Debug)]
@@ -22,6 +22,10 @@ struct Args {
     /// Dump AST before IR
     #[arg(long)]
     ast: bool,
+
+    /// Execute the code and print result
+    #[arg(long)]
+    run: bool,
 }
 
 fn main() {
@@ -45,8 +49,22 @@ fn main() {
                 println!("AST: {:#?}", ast);
             }
 
-            let mut lower = Lower::new();
-            let result = lower.lower_expr(&ast);
+                let mut lower = Lower::new();
+                let result = lower.lower_expr(&ast);
+                let energy = estimate_energy(&lower.code);
+                for (i, instr) in lower.code.iter().enumerate() {
+                    println!("t{} = {}", i, instr);
+                }
+                println!("Result in {}", result);
+                println!("Estimated total energy: {} units", energy);
+
+                if args.run {
+                    let mut interpreter = econocode::interpreter::Interpreter::new();
+                    match interpreter.execute(&lower.code) {
+                        Ok(final_result) => println!("Execution result: {}", final_result),
+                        Err(e) => eprintln!("Execution error: {}", e),
+                    }
+                }
 
             let mut out = String::new();
             for instr in &lower.code {
