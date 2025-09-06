@@ -51,7 +51,7 @@ fn main() {
 
                 let mut lower = Lower::new();
                 let result = lower.lower_expr(&ast);
-                let energy = estimate_energy(&lower.code);
+                                let energy = estimate_energy(&lower.code);
                 for (i, instr) in lower.code.iter().enumerate() {
                     println!("t{} = {}", i, instr);
                 }

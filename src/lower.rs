@@ -1,21 +1,36 @@
-
-// Energy estimation for real lowering (step2)
-pub fn estimate_energy(instrs: &[Instr]) -> u32 {
+// Energy estimation for instructions with types
+pub fn estimate_energy(instrs: &[crate::ir::Instr]) -> u32 {
     let mut total = 0;
     for instr in instrs {
         total += match instr {
-            Instr::LoadConst(_, _) => 1, // Immediate load
-            Instr::Move(_, _) => 2, // Memory load (variable access)
-            Instr::BinOp(op, _, _, _) => match op {
-                BinOp::Add | BinOp::Sub => 1, 
-                BinOp::Mul => 3, 
-                BinOp::Div => 10,
+            crate::ir::Instr::LoadConst(_, _, typ) => match typ {
+                crate::ast::Type::I32 => 1,
+                crate::ast::Type::I64 => 1,
+            },
+            crate::ir::Instr::Move(_, _, typ) => match typ {
+                crate::ast::Type::I32 => 4,
+                crate::ast::Type::I64 => 5,
+            },
+            crate::ir::Instr::BinOp(op, _, _, _) => match op {
+                crate::ir::BinOp::Add(typ) | crate::ir::BinOp::Sub(typ) => match typ {
+                    crate::ast::Type::I32 => 1,
+                    crate::ast::Type::I64 => 1, // Same cost for ALU ops
+                },
+                crate::ir::BinOp::Mul(typ) => match typ {
+                    crate::ast::Type::I32 => 3,
+                    crate::ast::Type::I64 => 5, // Higher for 64-bit
+                },
+                crate::ir::BinOp::Div(typ) => match typ {
+                    crate::ast::Type::I32 => 20,
+                    crate::ast::Type::I64 => 40, // Much higher for 64-bit
+                },
             },
         };
     }
     total
 }
-use super::ast::Expr;
+
+use super::ast::{Expr, Type};
 use super::ir::{Instr, BinOp};
 
 pub struct Lower {
@@ -36,30 +51,37 @@ impl Lower {
 
     pub fn lower_expr(&mut self, e: &Expr) -> String {
         match e {
-            Expr::Int(v) => {
+            Expr::Int(v, typ) => {
                 let t = self.fresh();
-                self.code.push(Instr::LoadConst(*v, t.clone()));
+                self.code.push(Instr::LoadConst(*v, t.clone(), typ.clone()));
                 t
             }
-            Expr::Var(name) => {
+            Expr::Var(name, typ) => {
                 let t = self.fresh();
-                self.code.push(Instr::Move(name.clone(), t.clone()));
+                self.code.push(Instr::Move(name.clone(), t.clone(), typ.clone()));
                 t
             }
-            Expr::Add(a,b) | Expr::Sub(a,b) | Expr::Mul(a,b) | Expr::Div(a,b) => {
-                let la = self.lower_expr(a);
-                let lb = self.lower_expr(b);
-                let rd = self.fresh();
-                let op = match e {
-                    Expr::Add(_,_) => BinOp::Add,
-                    Expr::Sub(_,_) => BinOp::Sub,
-                    Expr::Mul(_,_) => BinOp::Mul,
-                    Expr::Div(_,_) => BinOp::Div,
-                    _ => unreachable!(),
-                };
-                self.code.push(Instr::BinOp(op, la, lb, rd.clone()));
-                rd
-            }
+            Expr::Add(a, b) => self.lower_binop(a, b, |typ| BinOp::Add(typ)),
+            Expr::Sub(a, b) => self.lower_binop(a, b, |typ| BinOp::Sub(typ)),
+            Expr::Mul(a, b) => self.lower_binop(a, b, |typ| BinOp::Mul(typ)),
+            Expr::Div(a, b) => self.lower_binop(a, b, |typ| BinOp::Div(typ)),
+        }
+    }
+
+    fn lower_binop(&mut self, a: &Expr, b: &Expr, op_fn: impl Fn(Type) -> BinOp) -> String {
+        let la = self.lower_expr(a);
+        let lb = self.lower_expr(b);
+        let rd = self.fresh();
+        let typ = self.get_type(a).clone();
+        let op = op_fn(typ);
+        self.code.push(Instr::BinOp(op, la, lb, rd.clone()));
+        rd
+    }
+
+    fn get_type<'a>(&self, e: &'a Expr) -> &'a Type {
+        match e {
+            Expr::Int(_, typ) | Expr::Var(_, typ) => typ,
+            Expr::Add(a, _) | Expr::Sub(a, _) | Expr::Mul(a, _) | Expr::Div(a, _) => self.get_type(a),
         }
     }
 }

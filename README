@@ -12,29 +12,26 @@ EconoCode is a simple compiler frontend that demonstrates the basic stages of co
 
 ## Supported Language Features
 
-The language supports basic arithmetic expressions:
-- Integer literals (e.g., `42`, `123`)
-- Variables/identifiers (e.g., `x`, `myVar`)
-- Binary arithmetic operations: `+`, `-`, `*`, `/`
-- Parentheses for grouping expressions
+The language supports basic arithmetic expressions with type annotations:
+- **Integer literals** with types: `42i32`, `123i64` (defaults to `i64`)
+- **Variables** with types: `x: i32`, `myVar: i64` (defaults to `i64`)
+- **Binary operations**: `+`, `-`, `*`, `/`
+- **Parentheses** for grouping: `(2 + 3) * 4`
+- **Type-aware energy estimation**: Different costs for `i32` vs `i64` operations
 
-## Usage
+## Examples
 
 ```bash
-# Compile the project
-cargo build
+# 32-bit operations (lower energy cost)
+./target/debug/econocode - <<< "2i32 + 3i32"
+# Output: Energy ~3 units
 
-# Run with input file
-./target/debug/econocode input.txt
+# 64-bit operations (higher energy cost)  
+./target/debug/econocode - <<< "2i64 * 3i64"
+# Output: Energy ~7 units
 
-# Save output to file
-./target/debug/econocode input.txt -o output.ir
-
-# Display AST before generating IR
-./target/debug/econocode input.txt --ast
-
-# Execute the code and print result
-./target/debug/econocode input.txt --run
+# Variables with types
+./target/debug/econocode - <<< "x: i32 + 5i32"
 ```
 
 ## Example

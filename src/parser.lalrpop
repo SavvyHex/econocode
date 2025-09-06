@@ -1,5 +1,5 @@
-// Simple arithmetic grammar
-use crate::ast::Expr;
+// Simple arithmetic grammar with types
+use crate::ast::{Expr, Type};
 use crate::lexer::Token;
 
 grammar;
@@ -15,6 +15,9 @@ extern {
         "/" => Token::Slash,
         "(" => Token::LParen,
         ")" => Token::RParen,
+        ":" => Token::Colon,
+        "i32" => Token::I32,
+        "i64" => Token::I64,
         "int" => Token::Int(<i64>),
         "ident" => Token::Ident(<String>),
     }
@@ -32,9 +35,15 @@ Term: Expr = {
     Factor,
 };
 
-
 Factor: Expr = {
-    <n:"int"> => Expr::Int(n),
-    <id:"ident"> => Expr::Var(id),
+    <n:"int"> <t:Type> => Expr::Int(n, t),
+    <n:"int"> => Expr::Int(n, Type::I64), // default to i64
+    <id:"ident"> ":" <t:Type> => Expr::Var(id, t),
+    <id:"ident"> => Expr::Var(id, Type::I64), // default to i64
     "(" <e:Expr> ")" => e,
+};
+
+Type: Type = {
+    "i32" => Type::I32,
+    "i64" => Type::I64,
 };
