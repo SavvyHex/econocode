@@ -15,6 +15,9 @@ pub enum Token {
 
     #[token("(")] LParen,
     #[token(")")] RParen,
+    #[token(":")] Colon,
+    #[token("i32")] I32,
+    #[token("i64")] I64,
 
     // Skip whitespace automatically
     #[regex(r"[ \t\n\f]+", logos::skip)]

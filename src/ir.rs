@@ -87,23 +87,33 @@ impl IROp {
 use std::fmt;
 
 #[derive(Debug, Clone)]
-pub enum BinOp { Add, Sub, Mul, Div }
+pub enum BinOp { 
+    Add(crate::ast::Type), 
+    Sub(crate::ast::Type), 
+    Mul(crate::ast::Type), 
+    Div(crate::ast::Type) 
+}
 
 #[derive(Debug, Clone)]
 pub enum Instr {
-    LoadConst(i64, String),
-    Move(String, String),
+    LoadConst(i64, String, crate::ast::Type),
+    Move(String, String, crate::ast::Type),
     BinOp(BinOp, String, String, String),
 }
 
 impl fmt::Display for Instr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Instr::LoadConst(v, d) => write!(f, "{} = const {}", d, v),
-            Instr::Move(s, d) => write!(f, "{} = {}", d, s),
+            Instr::LoadConst(v, d, _) => write!(f, "{} = const {}", d, v),
+            Instr::Move(s, d, _) => write!(f, "{} = {}", d, s),
             Instr::BinOp(op, a, b, d) => {
-                let s = match op { BinOp::Add => "add", BinOp::Sub => "sub", BinOp::Mul => "mul", BinOp::Div => "div" };
-                write!(f, "{} = {} {}, {}", d, s, a, b)
+                let (s, typ) = match op { 
+                    BinOp::Add(t) => ("add", t), 
+                    BinOp::Sub(t) => ("sub", t), 
+                    BinOp::Mul(t) => ("mul", t), 
+                    BinOp::Div(t) => ("div", t) 
+                };
+                write!(f, "{} = {} {}, {} ({:?})", d, s, a, b, typ)
             }
         }
     }

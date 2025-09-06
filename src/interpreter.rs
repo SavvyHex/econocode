@@ -15,10 +15,10 @@ impl Interpreter {
     pub fn execute(&mut self, instrs: &[Instr]) -> Result<i64, String> {
         for instr in instrs {
             match instr {
-                Instr::LoadConst(val, dest) => {
+                Instr::LoadConst(val, dest, _) => {
                     self.vars.insert(dest.clone(), *val);
                 }
-                Instr::Move(src, dest) => {
+                Instr::Move(src, dest, _) => {
                     if let Some(val) = self.vars.get(src) {
                         self.vars.insert(dest.clone(), *val);
                     } else {
@@ -29,10 +29,10 @@ impl Interpreter {
                     let left_val = self.vars.get(left).ok_or(format!("Undefined variable: {}", left))?;
                     let right_val = self.vars.get(right).ok_or(format!("Undefined variable: {}", right))?;
                     let result = match op {
-                        BinOp::Add => left_val + right_val,
-                        BinOp::Sub => left_val - right_val,
-                        BinOp::Mul => left_val * right_val,
-                        BinOp::Div => {
+                        BinOp::Add(_) => left_val + right_val,
+                        BinOp::Sub(_) => left_val - right_val,
+                        BinOp::Mul(_) => left_val * right_val,
+                        BinOp::Div(_) => {
                             if *right_val == 0 {
                                 return Err("Division by zero".to_string());
                             }
@@ -46,7 +46,7 @@ impl Interpreter {
         // Return the value of the last temp (assuming it's the result)
         if let Some(last) = instrs.last() {
             match last {
-                Instr::LoadConst(_, dest) | Instr::Move(_, dest) | Instr::BinOp(_, _, _, dest) => {
+                Instr::LoadConst(_, dest, _) | Instr::Move(_, dest, _) | Instr::BinOp(_, _, _, dest) => {
                     self.vars.get(dest).cloned().ok_or("No result".to_string())
                 }
             }
