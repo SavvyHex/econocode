@@ -95,10 +95,19 @@ pub enum BinOp {
 }
 
 #[derive(Debug, Clone)]
+pub enum CmpIR {
+    Eq, Ne, Lt, Le, Gt, Ge,
+}
+
+#[derive(Debug, Clone)]
 pub enum Instr {
     LoadConst(i64, String, crate::ast::Type),
     Move(String, String, crate::ast::Type),
     BinOp(BinOp, String, String, String),
+    Cmp(CmpIR, String, String, String),
+    Label(String),
+    BrIf(String, String, String), // cond, then_label, else_label
+    Jmp(String),
 }
 
 impl fmt::Display for Instr {
@@ -115,6 +124,13 @@ impl fmt::Display for Instr {
                 };
                 write!(f, "{} = {} {}, {} ({:?})", d, s, a, b, typ)
             }
+            Instr::Cmp(op, a, b, d) => {
+                let s = match op { CmpIR::Eq=>"cmpeq", CmpIR::Ne=>"cmpne", CmpIR::Lt=>"cmplt", CmpIR::Le=>"cmple", CmpIR::Gt=>"cmpgt", CmpIR::Ge=>"cmpge" };
+                write!(f, "{} = {} {}, {}", d, s, a, b)
+            }
+            Instr::Label(name) => write!(f, "{}:", name),
+            Instr::BrIf(c, t, e) => write!(f, "br_if {}, {}, {}", c, t, e),
+            Instr::Jmp(l) => write!(f, "jmp {}", l),
         }
     }
 }

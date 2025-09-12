@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::ir::{Instr, BinOp};
+use crate::ir::{Instr, BinOp, CmpIR};
 
 pub struct Interpreter {
     vars: HashMap<String, i64>,
@@ -13,45 +13,54 @@ impl Interpreter {
     }
 
     pub fn execute(&mut self, instrs: &[Instr]) -> Result<i64, String> {
-        for instr in instrs {
-            match instr {
-                Instr::LoadConst(val, dest, _) => {
-                    self.vars.insert(dest.clone(), *val);
-                }
+        // Pre-index labels
+        let mut labels: HashMap<String, usize> = HashMap::new();
+        for (i, instr) in instrs.iter().enumerate() {
+            if let Instr::Label(name) = instr { labels.insert(name.clone(), i); }
+        }
+        let mut pc: usize = 0;
+        let mut last_dest: Option<String> = None;
+        while pc < instrs.len() {
+            match &instrs[pc] {
+                Instr::LoadConst(val, dest, _) => { self.vars.insert(dest.clone(), *val); last_dest = Some(dest.clone()); pc += 1; }
                 Instr::Move(src, dest, _) => {
-                    if let Some(val) = self.vars.get(src) {
-                        self.vars.insert(dest.clone(), *val);
-                    } else {
-                        return Err(format!("Undefined variable: {}", src));
-                    }
+                    let v = *self.vars.get(src).ok_or_else(|| format!("Undefined variable: {}", src))?;
+                    self.vars.insert(dest.clone(), v);
+                    last_dest = Some(dest.clone());
+                    pc += 1;
                 }
-                Instr::BinOp(op, left, right, dest) => {
-                    let left_val = self.vars.get(left).ok_or(format!("Undefined variable: {}", left))?;
-                    let right_val = self.vars.get(right).ok_or(format!("Undefined variable: {}", right))?;
-                    let result = match op {
-                        BinOp::Add(_) => left_val + right_val,
-                        BinOp::Sub(_) => left_val - right_val,
-                        BinOp::Mul(_) => left_val * right_val,
-                        BinOp::Div(_) => {
-                            if *right_val == 0 {
-                                return Err("Division by zero".to_string());
-                            }
-                            left_val / right_val
-                        }
+                Instr::BinOp(op, l, r, d) => {
+                    let lv = *self.vars.get(l).ok_or_else(|| format!("Undefined variable: {}", l))?;
+                    let rv = *self.vars.get(r).ok_or_else(|| format!("Undefined variable: {}", r))?;
+                    let res = match op {
+                        BinOp::Add(_) => lv + rv,
+                        BinOp::Sub(_) => lv - rv,
+                        BinOp::Mul(_) => lv * rv,
+                        BinOp::Div(_) => { if rv == 0 { return Err("Division by zero".into()); } lv / rv }
                     };
-                    self.vars.insert(dest.clone(), result);
+                    self.vars.insert(d.clone(), res);
+                    last_dest = Some(d.clone());
+                    pc += 1;
+                }
+                Instr::Cmp(op, l, r, d) => {
+                    let lv = *self.vars.get(l).ok_or_else(|| format!("Undefined variable: {}", l))?;
+                    let rv = *self.vars.get(r).ok_or_else(|| format!("Undefined variable: {}", r))?;
+                    let res = match op { CmpIR::Eq=> lv==rv, CmpIR::Ne=> lv!=rv, CmpIR::Lt=> lv<rv, CmpIR::Le=> lv<=rv, CmpIR::Gt=> lv>rv, CmpIR::Ge=> lv>=rv } as i64;
+                    self.vars.insert(d.clone(), res);
+                    last_dest = Some(d.clone());
+                    pc += 1;
+                }
+                Instr::Label(_) => { pc += 1; }
+                Instr::BrIf(c, t, e) => {
+                    let cv = *self.vars.get(c).ok_or_else(|| format!("Undefined variable: {}", c))?;
+                    let target = if cv != 0 { t } else { e };
+                    pc = *labels.get(target).ok_or_else(|| format!("Unknown label: {}", target))?;
+                }
+                Instr::Jmp(l) => {
+                    pc = *labels.get(l).ok_or_else(|| format!("Unknown label: {}", l))?;
                 }
             }
         }
-        // Return the value of the last temp (assuming it's the result)
-        if let Some(last) = instrs.last() {
-            match last {
-                Instr::LoadConst(_, dest, _) | Instr::Move(_, dest, _) | Instr::BinOp(_, _, _, dest) => {
-                    self.vars.get(dest).cloned().ok_or("No result".to_string())
-                }
-            }
-        } else {
-            Err("No instructions".to_string())
-        }
+        if let Some(d) = last_dest { self.vars.get(&d).cloned().ok_or("No result".into()) } else { Err("No instructions".into()) }
     }
 }

@@ -1,0 +1,9 @@
+{
+  n: i64 = 5i64;
+  fact: i64 = 1i64;
+  while (n > 1i64) {
+    fact = fact * n;
+    n = n - 1i64;
+  }
+  fact;
+}
