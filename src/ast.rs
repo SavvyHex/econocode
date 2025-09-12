@@ -24,6 +24,7 @@ pub enum Expr {
     Mul(Box<Expr>, Box<Expr>),
     Div(Box<Expr>, Box<Expr>),
     Cmp(CmpOp, Box<Expr>, Box<Expr>),
+    Read(String, Type),
     Block(Vec<Expr>),
     IfElse {
         cond: Box<Expr>,

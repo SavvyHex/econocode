@@ -31,6 +31,7 @@ extern {
         "if" => Token::If,
         "else" => Token::Else,
         "while" => Token::While,
+    "read" => Token::Read,
         "int" => Token::Int(<i64>),
         "ident" => Token::Ident(<String>),
     }
@@ -51,6 +52,7 @@ Stmt: Expr = {
     <e:Expr0> => e,
     <e:IfStmt> => e,
     <e:WhileStmt> => e,
+    <e:ReadStmt> ";" => e,
     <e:Block> => e,
 };
 
@@ -65,6 +67,11 @@ IfStmt: Expr = {
 
 WhileStmt: Expr = {
     "while" "(" <c:Expr0> ")" <b:Block> => Expr::While{cond: Box::new(c), body: match b { Expr::Block(v)=>v, _=> unreachable!() }},
+};
+
+ReadStmt: Expr = {
+    "read" <id:"ident"> ":" <t:Type> => Expr::Read(id, t),
+    "read" <id:"ident"> => Expr::Read(id, Type::I64),
 };
 
 // Assignment and comparisons have lower precedence than arithmetic

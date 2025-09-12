@@ -26,6 +26,7 @@ pub fn estimate_energy(instrs: &[crate::ir::Instr]) -> u32 {
                 },
             },
             crate::ir::Instr::Cmp(_, _, _, _) => 1,
+            crate::ir::Instr::Read(_, _) => 50, // treat as a relatively expensive I/O
             crate::ir::Instr::Label(_) => 0,
             crate::ir::Instr::BrIf(_, _, _) => 1,
             crate::ir::Instr::Jmp(_) => 1,
@@ -71,6 +72,11 @@ impl Lower {
                 let t = self.fresh();
                 self.code.push(Instr::Move(name.clone(), t.clone(), typ.clone()));
                 t
+            }
+            Expr::Read(name, typ) => {
+                // Generate an IR read into the named variable
+                self.code.push(Instr::Read(name.clone(), typ.clone()));
+                name.clone()
             }
             Expr::Assign(name, expr, typ) => {
                 let src = self.lower_expr(expr);
@@ -147,6 +153,7 @@ impl Lower {
     fn get_type<'a>(&self, e: &'a Expr) -> &'a Type {
         match e {
             Expr::Int(_, typ) | Expr::Var(_, typ) | Expr::Assign(_, _, typ) => typ,
+            Expr::Read(_, typ) => typ,
             Expr::Add(a, _) | Expr::Sub(a, _) | Expr::Mul(a, _) | Expr::Div(a, _) | Expr::Cmp(_, a, _) => self.get_type(a),
             Expr::Block(stmts) => stmts.last().map(|e| self.get_type(e)).unwrap_or(&Type::I64),
             Expr::IfElse{..} | Expr::While{..} => &Type::I64,

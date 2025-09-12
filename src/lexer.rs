@@ -10,6 +10,7 @@ pub enum Token {
     #[token("if")] If,
     #[token("else")] Else,
     #[token("while")] While,
+    #[token("read")] Read,
     #[token("i32")] I32,
     #[token("i64")] I64,
 

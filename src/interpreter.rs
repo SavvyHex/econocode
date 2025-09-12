@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use crate::ir::{Instr, BinOp, CmpIR};
+use std::io::{self, Write};
 
 pub struct Interpreter {
     vars: HashMap<String, i64>,
@@ -58,6 +59,18 @@ impl Interpreter {
                 }
                 Instr::Jmp(l) => {
                     pc = *labels.get(l).ok_or_else(|| format!("Unknown label: {}", l))?;
+                }
+                Instr::Read(name, _) => {
+                    // Prompt and read a single line from stdin for each read instruction
+                    print!("Input {}: ", name);
+                    io::stdout().flush().ok();
+                    let mut line = String::new();
+                    io::stdin().read_line(&mut line).map_err(|e| e.to_string())?;
+                    let trimmed = line.trim();
+                    let val: i64 = trimmed.parse().map_err(|_| format!("Failed to parse input '{}' as i64", trimmed))?;
+                    self.vars.insert(name.clone(), val);
+                    last_dest = Some(name.clone());
+                    pc += 1;
                 }
             }
         }

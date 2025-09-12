@@ -1,0 +1,10 @@
+{
+  read n;
+  i: i64 = 1i64;
+  sum: i64 = 0i64;
+  while (i <= n) {
+    sum = sum + i;
+    i = i + 1i64;
+  }
+  sum;
+}

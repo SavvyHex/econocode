@@ -105,6 +105,7 @@ pub enum Instr {
     Move(String, String, crate::ast::Type),
     BinOp(BinOp, String, String, String),
     Cmp(CmpIR, String, String, String),
+    Read(String, crate::ast::Type),
     Label(String),
     BrIf(String, String, String), // cond, then_label, else_label
     Jmp(String),
@@ -128,6 +129,7 @@ impl fmt::Display for Instr {
                 let s = match op { CmpIR::Eq=>"cmpeq", CmpIR::Ne=>"cmpne", CmpIR::Lt=>"cmplt", CmpIR::Le=>"cmple", CmpIR::Gt=>"cmpgt", CmpIR::Ge=>"cmpge" };
                 write!(f, "{} = {} {}, {}", d, s, a, b)
             }
+            Instr::Read(name, typ) => write!(f, "read {} ({:?})", name, typ),
             Instr::Label(name) => write!(f, "{}:", name),
             Instr::BrIf(c, t, e) => write!(f, "br_if {}, {}, {}", c, t, e),
             Instr::Jmp(l) => write!(f, "jmp {}", l),
