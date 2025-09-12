@@ -1,6 +1,6 @@
 # EconoCode
 
-A toy compiler that transforms arithmetic expressions into intermediate representation (IR) code.
+A toy compiler that transforms a small language (arithmetic + control flow + input) into intermediate representation (IR) code and can interpret it.
 
 ## Overview
 
@@ -12,12 +12,16 @@ EconoCode is a simple compiler frontend that demonstrates the basic stages of co
 
 ## Supported Language Features
 
-The language supports basic arithmetic expressions with type annotations:
-- **Integer literals** with types: `42i32`, `123i64` (defaults to `i64`)
-- **Variables** with types: `x: i32`, `myVar: i64` (defaults to `i64`)
-- **Binary operations**: `+`, `-`, `*`, `/`
-- **Parentheses** for grouping: `(2 + 3) * 4`
-- **Type-aware energy estimation**: Different costs for `i32` vs `i64` operations
+The language supports arithmetic, control flow, and input:
+- Integers with optional type suffix: `42i32`, `123i64` (default is `i64`)
+- Variables with optional type: `x: i32`, `myVar: i64` (default is `i64`)
+- Binary ops: `+`, `-`, `*`, `/`
+- Comparisons: `==`, `!=`, `<`, `<=`, `>`, `>=` (booleans as 0/1)
+- Assignment: `x = 5`, `y: i64 = x + 1`
+- Blocks: `{ stmt* }`
+- Conditionals: `if (cond) { ... } else { ... }`
+- Loops: `while (cond) { ... }`
+- Input: `read x;` or `read y: i32;` (reads one line from stdin, parses integer)
 
 ## Examples
 
@@ -34,21 +38,38 @@ The language supports basic arithmetic expressions with type annotations:
 ./target/debug/econocode - <<< "x: i32 + 5i32"
 ```
 
-## Example
+## Examples
 
-Input file (`example.txt`):
+Arithmetic only (32-bit):
 ```
-(2 + 3) * x
+2i32 * 3i32
 ```
 
-Output IR:
+If + while:
 ```
-t0 = const 2
-t1 = const 3
-t2 = add t0, t1
-t3 = x
-t4 = mul t2, t3
-Result in t4
+{
+	x: i64 = 0;
+	y: i64 = 1;
+	if (2i64 * 3i64 == 6i64) {
+		x = 10i64;
+	} else {
+		x = 20i64;
+	}
+	while (x < 13i64) {
+		x = x + y;
+	}
+	x;
+}
+```
+
+Read input and add:
+```
+{
+	read n: i64;
+	read m;      // defaults to i64
+	s: i64 = n + m;
+	s;
+}
 ```
 
 ## Architecture
@@ -59,6 +80,33 @@ Result in t4
 - **`src/lower.rs`** - AST to IR transformation logic
 - **`src/ir.rs`** - Intermediate representation definitions
 - **`src/main.rs`** - Command-line interface and compilation pipeline
+- New since control flow/input:
+	- `IfElse`, `While`, `Assign`, `Block`, `CmpOp`, and `Read` in AST
+	- IR adds `Cmp`, `Label`, `BrIf`, `Jmp`, and `Read`
+	- Interpreter executes with a program counter and label table; `read` consumes one stdin line per statement
+
+## Run it
+
+- Build and run a file:
+	- cargo run path/to/file.txt
+
+- Execute the IR and print the result:
+	- cargo run -- --run path/to/file.txt
+
+- Provide stdin for `read` statements (example adds two numbers):
+	- printf "7\n8\n" | cargo run -- --run test/test9.txt
+
+### Interactive input
+
+When a program uses `read`, you can run interactively and type values when prompted:
+- cargo run -- --run test/test9.txt
+	- Input n: 7
+	- Input m: 8
+	- Execution result: 15
+
+Notes:
+- Each `read` consumes one line from stdin (numbers like `-23` are accepted).
+- Prompts appear as `Input <var>:`.
 
 ## Dependencies
 

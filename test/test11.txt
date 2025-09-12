@@ -1,0 +1,22 @@
+{
+  read k;
+  total: i64 = 0i64;
+  i: i64 = 0i64;
+  while (i < k) {
+    t1: i64 = i * 2i64;
+    q: i64 = t1 / 3i64;
+    r: i64 = t1 - (q * 3i64);
+    if (r == 0i64) {
+      read x;
+      total = total + x;
+    } else {
+      j: i64 = 0i64;
+      while (j < 3i64) {
+        total = total + i + j;
+        j = j + 1i64;
+      }
+    }
+    i = i + 1i64;
+  }
+  total;
+}

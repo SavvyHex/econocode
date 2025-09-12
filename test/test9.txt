@@ -1,0 +1,6 @@
+{
+  read n: i64;
+  read m;
+  s: i64 = n + m;
+  s;
+}

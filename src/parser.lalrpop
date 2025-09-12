@@ -1,5 +1,5 @@
 // Simple arithmetic grammar with types
-use crate::ast::{Expr, Type};
+use crate::ast::{Expr, Type, CmpOp};
 use crate::lexer::Token;
 
 grammar;
@@ -13,34 +13,98 @@ extern {
         "-" => Token::Minus,
         "*" => Token::Star,
         "/" => Token::Slash,
+        "=" => Token::Eq,
+        "==" => Token::EqEq,
+        "!=" => Token::BangEq,
+        "<" => Token::Lt,
+        "<=" => Token::LtEq,
+        ">" => Token::Gt,
+        ">=" => Token::GtEq,
         "(" => Token::LParen,
         ")" => Token::RParen,
+        "{" => Token::LBrace,
+        "}" => Token::RBrace,
+        ";" => Token::Semicolon,
         ":" => Token::Colon,
         "i32" => Token::I32,
         "i64" => Token::I64,
+        "if" => Token::If,
+        "else" => Token::Else,
+        "while" => Token::While,
+    "read" => Token::Read,
         "int" => Token::Int(<i64>),
         "ident" => Token::Ident(<String>),
     }
 }
 
+// Program is a sequence of statements; we return a Block
 pub Expr: Expr = {
-    <l:Expr> "+" <r:Term> => Expr::Add(Box::new(l), Box::new(r)),
-    <l:Expr> "-" <r:Term> => Expr::Sub(Box::new(l), Box::new(r)),
-    Term,
+    <s:Stmts> => Expr::Block(s),
 };
 
-Term: Expr = {
-    <l:Term> "*" <r:Factor> => Expr::Mul(Box::new(l), Box::new(r)),
-    <l:Term> "/" <r:Factor> => Expr::Div(Box::new(l), Box::new(r)),
-    Factor,
+Stmts: Vec<Expr> = {
+    => vec![],
+    <mut v:Stmts> <s:Stmt> => { v.push(s); v },
 };
 
-Factor: Expr = {
+Stmt: Expr = {
+    <e:Expr0> ";" => e,
+    <e:Expr0> => e,
+    <e:IfStmt> => e,
+    <e:WhileStmt> => e,
+    <e:ReadStmt> ";" => e,
+    <e:Block> => e,
+};
+
+Block: Expr = {
+    "{" <s:Stmts> "}" => Expr::Block(s),
+};
+
+IfStmt: Expr = {
+    "if" "(" <c:Expr0> ")" <t:Block> "else" <e:Block> => Expr::IfElse{cond: Box::new(c), then_branch: match t { Expr::Block(v)=>v, _=> unreachable!() }, else_branch: Some(match e { Expr::Block(v)=>v, _=> unreachable!() })},
+    "if" "(" <c:Expr0> ")" <t:Block> => Expr::IfElse{cond: Box::new(c), then_branch: match t { Expr::Block(v)=>v, _=> unreachable!() }, else_branch: None},
+};
+
+WhileStmt: Expr = {
+    "while" "(" <c:Expr0> ")" <b:Block> => Expr::While{cond: Box::new(c), body: match b { Expr::Block(v)=>v, _=> unreachable!() }},
+};
+
+ReadStmt: Expr = {
+    "read" <id:"ident"> ":" <t:Type> => Expr::Read(id, t),
+    "read" <id:"ident"> => Expr::Read(id, Type::I64),
+};
+
+// Assignment and comparisons have lower precedence than arithmetic
+Expr0: Expr = {
+    <id:"ident"> ":" <t:Type> "=" <e:Expr0> => Expr::Assign(id, Box::new(e), t),
+    <id:"ident"> "=" <e:Expr0> => Expr::Assign(id, Box::new(e), Type::I64),
+    <l:Expr1> "==" <r:Expr1> => Expr::Cmp(CmpOp::Eq, Box::new(l), Box::new(r)),
+    <l:Expr1> "!=" <r:Expr1> => Expr::Cmp(CmpOp::Ne, Box::new(l), Box::new(r)),
+    <l:Expr1> "<=" <r:Expr1> => Expr::Cmp(CmpOp::Le, Box::new(l), Box::new(r)),
+    <l:Expr1> ">=" <r:Expr1> => Expr::Cmp(CmpOp::Ge, Box::new(l), Box::new(r)),
+    <l:Expr1> "<" <r:Expr1> => Expr::Cmp(CmpOp::Lt, Box::new(l), Box::new(r)),
+    <l:Expr1> ">" <r:Expr1> => Expr::Cmp(CmpOp::Gt, Box::new(l), Box::new(r)),
+    Expr1,
+};
+
+Expr1: Expr = {
+    <l:Expr1> "+" <r:Expr2> => Expr::Add(Box::new(l), Box::new(r)),
+    <l:Expr1> "-" <r:Expr2> => Expr::Sub(Box::new(l), Box::new(r)),
+    Expr2,
+};
+
+Expr2: Expr = {
+    <l:Expr2> "*" <r:Expr3> => Expr::Mul(Box::new(l), Box::new(r)),
+    <l:Expr2> "/" <r:Expr3> => Expr::Div(Box::new(l), Box::new(r)),
+    Expr3,
+};
+
+Expr3: Expr = {
     <n:"int"> <t:Type> => Expr::Int(n, t),
-    <n:"int"> => Expr::Int(n, Type::I64), // default to i64
+    <n:"int"> => Expr::Int(n, Type::I64),
     <id:"ident"> ":" <t:Type> => Expr::Var(id, t),
-    <id:"ident"> => Expr::Var(id, Type::I64), // default to i64
-    "(" <e:Expr> ")" => e,
+    <id:"ident"> => Expr::Var(id, Type::I64),
+    "(" <e:Expr0> ")" => e,
 };
 
 Type: Type = {
